@@ -1,22 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Add Element</title>
+    <title>Chat Application</title>
 </head>
 <body>
-    <h1>Add Element to Table</h1>
-    <form method="POST">
-        <label for="element">Element:</label>
-        <input type="text" id="element" name="element" required>
-        <button type="submit">Add</button>
+    <h1>Chat Application</h1>
+
+    <!-- Form for sending messages -->
+    <form id="messageForm">
+        <input type="text" id="messageInput" placeholder="Enter a message">
+        <button type="submit">Send</button>
     </form>
 
-    <h1>Item List</h1>
-    <ul>
-        {% for item in items %}
-            <li>{{ item[0] }}</li>
-        {% endfor %}
-    </ul>
+    <!-- Display received messages -->
+    <div id="messageDisplay">
+        <h2>Received Messages:</h2>
+        <ul id="messageList"></ul>
+    </div>
+
+    <script>
+        // JavaScript code for handling form submission and displaying messages
+        document.addEventListener("DOMContentLoaded", function () {
+            const messageForm = document.getElementById("messageForm");
+            const messageInput = document.getElementById("messageInput");
+            const messageList = document.getElementById("messageList");
+
+            messageForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                const message = messageInput.value.trim();
+                if (message) {
+                    // Create a new list item to display the message
+                    const listItem = document.createElement("li");
+                    listItem.textContent = message;
+
+                    // Append the list item to the message list
+                    messageList.appendChild(listItem);
+
+                    // Clear the input field
+                    messageInput.value = "";
+                }
+            });
+        });
+    </script>
 </body>
 </html>

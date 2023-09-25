@@ -1,60 +1,65 @@
-from flask import Flask, render_template, request, redirect, url_for
-import psycopg2
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
+from flask import render_template, redirect, url_for
+import psycopg2
 import random
+
 app = Flask(__name__)
-DB_HOST = "db"
-DB_PORT = "5432"
-DB_NAME = "postgres"
-DB_USER = "your-db-username"
-DB_PASSWORD = "your-db-password"
+CORS(app)
+
+messages = []
+
+RPI_2_IP = "192.168.1.22"
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    if request.method == "POST":
-        new_element = request.form.get("element", "default_value")
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-        )
-        cur = conn.cursor()
-        cur.execute("INSERT INTO my_table (column_name) VALUES (%s);", (new_element,))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("index"))
+    return render_template("index.html")
 
-    conn = psycopg2.connect(
-        host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT column_name FROM my_table;")
-    items = cur.fetchall()
-    conn.close()
 
-    return render_template("index.html", items=items)
+@app.route("/send_message", methods=["POST"])
+def send_message():
+    data = request.json
+    message = data.get("message")
 
-@app.route("/adddata",methods=["GET"])
-def add():
-    newdata = requests.get("192.68.1.22:5000/get").content
-    conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-        )
-    cur = conn.cursor()
-    cur.execute("INSERT INTO my_table (column_name) VALUES (%s);", (newdata,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("index"))
+    if message:
+        messages.append(message)
+        send_to_rpi_2(message)
+        return jsonify({"message": "Message sent from RPI-1."})
+    else:
+        return jsonify({"error": "Invalid message data."}), 400
 
-@app.route("/get",methods=["GET"])
-def get():
-    return "newdata" + str(random.randint(0,100))
+
+@app.route("/get_messages", methods=["GET"])
+def get_messages():
+    return jsonify({"messages": messages})
+
+
+@app.route("/receive_message", methods=["POST"])
+def receive_message():
+    data = request.json
+    message = data.get("message")
+
+    if message:
+        messages.append(message)
+        return jsonify({"message": "Message received by RPI-1."})
+    else:
+        return jsonify({"error": "Invalid message data."}), 400
+
+
+def send_to_rpi_2(message):
+    url = f"http://{RPI_2_IP}:5000/receive_message"
+    payload = {"message": message}
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("Message sent to RPI-2.")
+        else:
+            print("Failed to send message to RPI-2.")
+    except Exception as e:
+        print("Error sending message to RPI-2:", str(e))
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
