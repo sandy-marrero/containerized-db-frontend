@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import requests
 from flask import render_template, redirect, url_for
 import psycopg2
@@ -12,12 +12,12 @@ messages = []
 
 RPI_2_IP = "192.168.1.22"
 
-
+@cross_origin
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
+@cross_origin
 @app.route("/send_message", methods=["POST"])
 def send_message():
     data = request.json
@@ -30,12 +30,12 @@ def send_message():
     else:
         return jsonify({"error": "Invalid message data."}), 400
 
-
+@cross_origin
 @app.route("/get_messages", methods=["GET"])
 def get_messages():
     return jsonify({"messages": messages})
 
-
+@cross_origin
 @app.route("/receive_message", methods=["POST"])
 def receive_message():
     data = request.json
@@ -46,7 +46,6 @@ def receive_message():
         return jsonify({"message": "Message received by RPI-1."})
     else:
         return jsonify({"error": "Invalid message data."}), 400
-
 
 def send_to_rpi_2(message):
     url = f"http://{RPI_2_IP}:5000/receive_message"
